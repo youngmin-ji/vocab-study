@@ -360,6 +360,25 @@
         <div id="quiz-history-list" class="quiz-history-list"></div>
       </div>
 
+      <!-- 학습 일지 -->
+      <div class="mt-6">
+        <div class="section-title" style="font-size:16px;margin-bottom:12px">📅 학습 일지</div>
+        <div id="study-journal-list"></div>
+      </div>
+
+      <!-- 데이터 백업 -->
+      <div class="backup-zone mt-6">
+        <div class="section-title" style="font-size:16px;margin-bottom:6px">💾 데이터 백업</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">즐겨찾기와 학습 기록을 파일로 저장하거나 불러올 수 있어요.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="exportData()">📤 내보내기</button>
+          <label class="btn btn-secondary" style="cursor:pointer">
+            📥 가져오기
+            <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+          </label>
+        </div>
+      </div>
+
       <!-- Danger Zone -->
       <div class="danger-zone">
         <h3>⚠️ 데이터 초기화</h3>

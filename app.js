@@ -699,6 +699,9 @@ function renderProgress() {
       <div style="font-size:13px;font-weight:700;color:var(--text-muted)">${h.pct}%</div>
     </div>
   `).join('');
+
+  // 학습 일지 렌더링
+  renderStudyJournal();
 }
 
 function resetAllData() {
@@ -709,6 +712,92 @@ function resetAllData() {
   localStorage.removeItem('vocab_streak');
   showToast('학습 기록이 초기화되었어요');
   renderProgress();
+}
+
+// ===========================
+// 데이터 내보내기 / 가져오기
+// ===========================
+function exportData() {
+  const data = {
+    vocab_favorites: getStorage('vocab_favorites'),
+    vocab_studied: getStorage('vocab_studied'),
+    vocab_quiz_history: getStorage('vocab_quiz_history'),
+    vocab_streak: getStorage('vocab_streak'),
+    exportedAt: getTodayKey(),
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vocab-data-${getTodayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('데이터를 내보냈어요 📤');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm('현재 데이터를 덮어쓰고 가져올까요?')) return;
+      if (data.vocab_favorites) setStorage('vocab_favorites', data.vocab_favorites);
+      if (data.vocab_studied) setStorage('vocab_studied', data.vocab_studied);
+      if (data.vocab_quiz_history) setStorage('vocab_quiz_history', data.vocab_quiz_history);
+      if (data.vocab_streak) setStorage('vocab_streak', data.vocab_streak);
+      showToast('데이터를 가져왔어요 📥');
+      renderProgress();
+      renderToday();
+    } catch {
+      showToast('파일을 읽을 수 없어요. 올바른 파일인지 확인해주세요.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ===========================
+// 학습 일지
+// ===========================
+function renderStudyJournal() {
+  const studied = getStudied();
+  const container = document.getElementById('study-journal-list');
+  if (!container) return;
+
+  const dates = Object.keys(studied).sort((a, b) => b.localeCompare(a));
+
+  if (dates.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="padding:30px 20px">
+      <div class="empty-state-icon" style="font-size:36px">📅</div>
+      <div class="empty-state-sub">아직 학습 기록이 없어요. 오늘부터 시작해봐요!</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = dates.map(date => {
+    const wordIds = studied[date];
+    const words = wordIds.map(id => WORDS.find(w => w.id === id)).filter(Boolean);
+    return `
+      <div class="journal-entry">
+        <div class="journal-date">
+          <span class="journal-date-text">${formatDateKorean(date)}</span>
+          <span class="journal-count">${words.length}단어</span>
+        </div>
+        <div class="journal-words">
+          ${words.map(w => `
+            <button class="journal-word-chip" onclick="openWordModal(${w.id})">
+              <span class="level-dot ${w.level}" style="width:6px;height:6px;flex-shrink:0"></span>
+              ${w.word}
+              <span class="journal-word-kr">${w.korean}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ===========================
