@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매일 영단어 - 오늘도 한 단어씩!</title>
+  <meta name="description" content="매일 새로운 영단어를 학습하세요. 플래시카드, 퀴즈, 즐겨찾기 기능 제공.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="app-logo">📚</div>
+      <div class="app-title-group">
+        <div class="app-title">매일 영단어</div>
+        <div class="app-subtitle">오늘도 한 단어씩 성장해요</div>
+      </div>
+      <div class="streak-badge" id="streak-badge">🔥 0일 연속</div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-page="today">
+      <span class="tab-icon">🌟</span>
+      <span>오늘</span>
+    </button>
+    <button class="nav-tab" data-page="flashcard">
+      <span class="tab-icon">🃏</span>
+      <span>플래시카드</span>
+    </button>
+    <button class="nav-tab" data-page="quiz">
+      <span class="tab-icon">✏️</span>
+      <span>퀴즈</span>
+    </button>
+    <button class="nav-tab" data-page="words">
+      <span class="tab-icon">📖</span>
+      <span>단어목록</span>
+    </button>
+    <button class="nav-tab" data-page="favorites">
+      <span class="tab-icon">⭐</span>
+      <span>즐겨찾기</span>
+    </button>
+    <button class="nav-tab" data-page="progress">
+      <span class="tab-icon">📊</span>
+      <span>기록</span>
+    </button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="app-container">
+
+    <!-- ========================
+         PAGE: TODAY
+         ======================== -->
+    <section class="page active" id="page-today">
+      <div id="date-display" class="date-display"></div>
+
+      <!-- Word of Day Card -->
+      <div class="wod-card">
+        <div class="wod-level-badge" id="wod-level">기초</div>
+        <div class="wod-word" id="wod-word">loading...</div>
+        <div class="wod-phonetic" id="wod-phonetic">/ˈloʊdɪŋ/</div>
+        <div class="wod-pos" id="wod-pos">noun</div>
+        <hr class="wod-divider">
+        <div class="wod-definition" id="wod-definition"></div>
+        <div class="wod-korean" id="wod-korean"></div>
+        <div class="wod-example" id="wod-example"></div>
+        <div class="wod-example-kr" id="wod-example-kr"></div>
+        <div class="wod-synonyms" id="wod-synonyms"></div>
+        <div class="wod-actions">
+          <button class="btn btn-white" onclick="wodSpeak()">🔊 발음 듣기</button>
+          <button class="btn btn-ghost" id="wod-fav-btn" onclick="wodFavoriteToggle()">☆ 즐겨찾기</button>
+        </div>
+      </div>
+
+      <!-- Mini Stats -->
+      <div class="progress-mini">
+        <div class="stat-mini-card">
+          <div class="stat-mini-icon">🔥</div>
+          <div class="stat-mini-value" id="stat-streak">0</div>
+          <div class="stat-mini-label">연속 학습</div>
+        </div>
+        <div class="stat-mini-card">
+          <div class="stat-mini-icon">📝</div>
+          <div class="stat-mini-value" id="stat-studied">0</div>
+          <div class="stat-mini-label">학습 단어</div>
+        </div>
+        <div class="stat-mini-card">
+          <div class="stat-mini-icon">🎯</div>
+          <div class="stat-mini-value" id="stat-quiz">-</div>
+          <div class="stat-mini-label">퀴즈 정확도</div>
+        </div>
+      </div>
+
+      <!-- Quick Study -->
+      <div class="quick-study">
+        <h3>빠른 복습</h3>
+        <div class="quick-word-list" id="quick-word-list"></div>
+      </div>
+    </section>
+
+    <!-- ========================
+         PAGE: FLASHCARD
+         ======================== -->
+    <section class="page" id="page-flashcard">
+      <div class="section-title">플래시카드 🃏</div>
+
+      <!-- Filter chips -->
+      <div class="filter-bar">
+        <button class="filter-chip active" data-level="all" onclick="setFcFilter('all')">전체</button>
+        <button class="filter-chip beginner" data-level="beginner" onclick="setFcFilter('beginner')">기초</button>
+        <button class="filter-chip intermediate" data-level="intermediate" onclick="setFcFilter('intermediate')">중급</button>
+        <button class="filter-chip advanced" data-level="advanced" onclick="setFcFilter('advanced')">고급</button>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="flashcard-meta">
+        <span class="flashcard-counter" id="fc-counter">1 / 120</span>
+        <div class="flashcard-progress-bar">
+          <div class="flashcard-progress-fill" id="fc-progress-fill" style="width:0%"></div>
+        </div>
+        <button class="btn-icon" id="fc-shuffle-btn" onclick="fcToggleShuffle()" title="랜덤 순서">🔀</button>
+      </div>
+
+      <!-- Card -->
+      <div class="card-flip-scene" id="fc-scene" onclick="flipCard()">
+        <div class="card-flip-inner">
+          <!-- Front -->
+          <div class="card-front">
+            <div class="card-front-word" id="fc-front-word">word</div>
+            <div class="card-front-phonetic" id="fc-front-phonetic">/wɜːrd/</div>
+            <div class="card-front-pos" id="fc-front-pos">noun</div>
+            <div class="card-hint">👆 탭해서 뒤집기</div>
+          </div>
+          <!-- Back -->
+          <div class="card-back">
+            <div class="card-back-korean" id="fc-back-korean">단어</div>
+            <div class="card-back-definition" id="fc-back-definition">definition here</div>
+            <div class="card-back-example" id="fc-back-example">example sentence</div>
+            <div class="card-hint" style="color:rgba(255,255,255,0.5)">👆 탭해서 뒤집기</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flashcard-controls">
+        <button class="btn-icon" onclick="fcPrev()" title="이전">←</button>
+        <button class="btn-icon" onclick="fcSpeak()" title="발음 듣기">🔊</button>
+        <button class="btn-icon" id="fc-fav-btn" onclick="fcToggleFav()" title="즐겨찾기">🤍</button>
+        <button class="btn-icon" onclick="fcNext()" title="다음">→</button>
+      </div>
+      <div class="shuffle-info">← → 키보드 화살표로 넘기기 · 스페이스바로 뒤집기</div>
+    </section>
+
+    <!-- ========================
+         PAGE: QUIZ
+         ======================== -->
+    <section class="page" id="page-quiz">
+      <div class="section-title">퀴즈 ✏️</div>
+
+      <!-- Setup -->
+      <div id="quiz-setup" class="quiz-setup active">
+        <div class="quiz-config-card">
+          <div class="quiz-config-label">난이도 선택</div>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="quiz-level" value="all" checked>
+              전체 (120단어)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="quiz-level" value="beginner">
+              기초 (40단어)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="quiz-level" value="intermediate">
+              중급 (50단어)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="quiz-level" value="advanced">
+              고급 (30단어)
+            </label>
+          </div>
+        </div>
+
+        <div class="quiz-config-card">
+          <div class="quiz-config-label">문제 유형</div>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="quiz-type" value="en-to-kr" checked>
+              영어 → 한국어 뜻 맞히기
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="quiz-type" value="kr-to-en">
+              한국어 → 영어 단어 맞히기
+            </label>
+          </div>
+        </div>
+
+        <div class="quiz-config-card">
+          <div class="quiz-config-label">문제 수</div>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="quiz-count" value="5">
+              5문제 (빠른 퀴즈)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="quiz-count" value="10" checked>
+              10문제
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="quiz-count" value="20">
+              20문제
+            </label>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px" onclick="startQuiz()">
+          퀴즈 시작하기 →
+        </button>
+      </div>
+
+      <!-- Active Quiz -->
+      <div id="quiz-active" class="quiz-active">
+        <div class="quiz-progress-top">
+          <div class="flashcard-progress-bar">
+            <div class="flashcard-progress-fill" id="quiz-progress-fill" style="width:0%"></div>
+          </div>
+          <div class="quiz-score-display" id="quiz-score-display">0/0</div>
+        </div>
+
+        <div class="quiz-question-card">
+          <div class="quiz-question-num" id="quiz-q-num">문제 1 / 10</div>
+          <div class="quiz-question-text" id="quiz-q-text"></div>
+          <div class="quiz-question-sub" id="quiz-q-sub"></div>
+        </div>
+
+        <div id="quiz-feedback" class="quiz-feedback"></div>
+
+        <div class="quiz-option-grid" id="quiz-option-grid"></div>
+      </div>
+
+      <!-- Quiz Result -->
+      <div id="quiz-result" class="quiz-result">
+        <div class="result-score-circle">
+          <div class="result-score-num" id="result-score-num">0</div>
+          <div class="result-score-label" id="result-score-total">/ 10</div>
+        </div>
+        <div class="result-message" id="result-message">수고하셨어요!</div>
+        <div class="result-submessage" id="result-submessage"></div>
+        <div class="result-actions">
+          <button class="btn btn-primary" onclick="retryQuiz()">다시 퀴즈하기</button>
+          <button class="btn btn-secondary" onclick="backToQuizSetup()">설정 변경하기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================
+         PAGE: WORD LIST
+         ======================== -->
+    <section class="page" id="page-words">
+      <div class="section-title">단어 목록 📖</div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="영어 또는 한국어로 검색..."
+          oninput="onSearchInput(this.value)"
+          id="word-search-input"
+        >
+      </div>
+
+      <!-- Level filter -->
+      <div class="filter-bar">
+        <button class="filter-chip active" data-level="all" onclick="setListFilter('all')">전체</button>
+        <button class="filter-chip beginner" data-level="beginner" onclick="setListFilter('beginner')">기초</button>
+        <button class="filter-chip intermediate" data-level="intermediate" onclick="setListFilter('intermediate')">중급</button>
+        <button class="filter-chip advanced" data-level="advanced" onclick="setListFilter('advanced')">고급</button>
+      </div>
+
+      <div class="word-count-info" id="word-count-info">120개 단어</div>
+      <div class="word-list-grid" id="word-list-grid"></div>
+    </section>
+
+    <!-- ========================
+         PAGE: FAVORITES
+         ======================== -->
+    <section class="page" id="page-favorites">
+      <div class="section-title">즐겨찾기 ⭐</div>
+      <div id="favorites-content"></div>
+    </section>
+
+    <!-- ========================
+         PAGE: PROGRESS
+         ======================== -->
+    <section class="page" id="page-progress">
+      <div class="section-title">학습 기록 📊</div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card streak-card">
+          <div class="stat-card-icon">🔥</div>
+          <div class="stat-card-value" id="p-streak">0</div>
+          <div class="stat-card-label">연속 학습일</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">📝</div>
+          <div class="stat-card-value" id="p-studied">0</div>
+          <div class="stat-card-label">학습한 단어</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">✏️</div>
+          <div class="stat-card-value" id="p-quizzes">0</div>
+          <div class="stat-card-label">퀴즈 횟수</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">🎯</div>
+          <div class="stat-card-value" id="p-avg">-</div>
+          <div class="stat-card-label">평균 정확도</div>
+        </div>
+      </div>
+
+      <!-- Level Progress -->
+      <div class="level-progress-section card">
+        <div class="section-title" style="font-size:16px;margin-bottom:16px">수준별 학습 현황</div>
+        <div class="level-row">
+          <div class="level-label">🟢 기초</div>
+          <div class="level-bar-wrap">
+            <div class="level-bar beginner" id="bar-beginner" style="width:0%"></div>
+          </div>
+          <div class="level-count" id="count-beginner">0/40</div>
+        </div>
+        <div class="level-row">
+          <div class="level-label">🔵 중급</div>
+          <div class="level-bar-wrap">
+            <div class="level-bar intermediate" id="bar-intermediate" style="width:0%"></div>
+          </div>
+          <div class="level-count" id="count-intermediate">0/50</div>
+        </div>
+        <div class="level-row">
+          <div class="level-label">🔴 고급</div>
+          <div class="level-bar-wrap">
+            <div class="level-bar advanced" id="bar-advanced" style="width:0%"></div>
+          </div>
+          <div class="level-count" id="count-advanced">0/30</div>
+        </div>
+      </div>
+
+      <!-- Quiz History -->
+      <div class="mt-6">
+        <div class="section-title" style="font-size:16px;margin-bottom:12px">퀴즈 기록</div>
+        <div id="quiz-history-list" class="quiz-history-list"></div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="danger-zone">
+        <h3>⚠️ 데이터 초기화</h3>
+        <p>모든 학습 기록, 즐겨찾기, 퀴즈 기록이 삭제됩니다.</p>
+        <button class="btn btn-danger" onclick="resetAllData()">초기화하기</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Word Detail Modal -->
+  <div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px">
+        <div class="modal-word" id="modal-word">word</div>
+        <span class="level-badge" id="modal-level">기초</span>
+      </div>
+      <div class="modal-phonetic" id="modal-phonetic">/fəˈnetɪk/</div>
+      <div class="modal-pos" id="modal-pos">noun</div>
+
+      <div class="modal-korean" id="modal-korean">한국어 뜻</div>
+      <div class="modal-definition" id="modal-definition">English definition here.</div>
+
+      <div class="modal-label">예문</div>
+      <div class="modal-example-box" id="modal-example"></div>
+      <div class="modal-example-kr" id="modal-example-kr"></div>
+
+      <div class="modal-label">동의어</div>
+      <div class="modal-synonyms" id="modal-synonyms"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="modalSpeak()">🔊 발음 듣기</button>
+        <button class="btn btn-secondary" id="modal-fav-btn" onclick="modalToggleFav()">☆ 즐겨찾기 추가</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <script src="words.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
