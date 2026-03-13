@@ -22,6 +22,18 @@ const state = {
   listFilter: 'all',
   // Modal
   modalWord: null,
+  // Memory Game
+  gameLevel: 'all',
+  gamePairs: 8,
+  gameCards: [],
+  gameFirst: null,
+  gameSecond: null,
+  gameChecking: false,
+  gameMoves: 0,
+  gameMatched: 0,
+  gameTotal: 0,
+  gameStartTime: null,
+  gameTimerInterval: null,
 };
 
 // ===========================
@@ -232,6 +244,7 @@ function navigate(page) {
     case 'words': renderWordList(); break;
     case 'favorites': renderFavorites(); break;
     case 'progress': renderProgress(); break;
+    case 'game': renderGameSetup(); break;
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -911,6 +924,168 @@ function modalToggleFav() {
   if (state.currentPage === 'words') renderWordList();
   if (state.currentPage === 'favorites') renderFavorites();
   if (state.currentPage === 'today') renderToday();
+}
+
+// ===========================
+// Page: Memory Game
+// ===========================
+function renderGameSetup() {
+  clearGameTimer();
+  document.getElementById('game-setup').classList.add('active');
+  document.getElementById('game-active').classList.remove('active');
+  document.getElementById('game-result').classList.remove('active');
+}
+
+function startMemoryGame() {
+  const levelRadios = document.querySelectorAll('input[name="game-level"]');
+  const pairRadios = document.querySelectorAll('input[name="game-pairs"]');
+  levelRadios.forEach(r => { if (r.checked) state.gameLevel = r.value; });
+  pairRadios.forEach(r => { if (r.checked) state.gamePairs = parseInt(r.value); });
+
+  let pool = state.gameLevel === 'all' ? [...WORDS] : WORDS.filter(w => w.level === state.gameLevel);
+  if (pool.length < state.gamePairs) {
+    showToast('단어가 부족해요. 난이도를 바꿔주세요.');
+    return;
+  }
+  pool = pool.sort(() => Math.random() - 0.5).slice(0, state.gamePairs);
+
+  const cards = [];
+  pool.forEach(word => {
+    cards.push({ id: `en-${word.id}`, type: 'en', wordId: word.id, text: word.word, isFlipped: false, isMatched: false });
+    cards.push({ id: `kr-${word.id}`, type: 'kr', wordId: word.id, text: word.korean, isFlipped: false, isMatched: false });
+  });
+  state.gameCards = cards.sort(() => Math.random() - 0.5);
+  state.gameFirst = null;
+  state.gameSecond = null;
+  state.gameChecking = false;
+  state.gameMoves = 0;
+  state.gameMatched = 0;
+  state.gameTotal = pool.length;
+  state.gameStartTime = Date.now();
+
+  document.getElementById('game-setup').classList.remove('active');
+  document.getElementById('game-active').classList.add('active');
+  document.getElementById('game-result').classList.remove('active');
+  renderGameBoard();
+  startGameTimer();
+}
+
+function renderGameBoard() {
+  document.getElementById('game-moves').textContent = state.gameMoves;
+  document.getElementById('game-matched').textContent = `${state.gameMatched}/${state.gameTotal}`;
+
+  const total = state.gameCards.length;
+  const cols = total <= 12 ? 3 : 4;
+  const grid = document.getElementById('game-grid');
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+  grid.innerHTML = state.gameCards.map((card, idx) => `
+    <div class="memory-card${card.isFlipped ? ' flipped' : ''}${card.isMatched ? ' matched' : ''}"
+         onclick="flipGameCard(${idx})" data-idx="${idx}">
+      <div class="memory-card-inner">
+        <div class="memory-card-back">📚</div>
+        <div class="memory-card-front ${card.type}">${card.text}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function flipGameCard(idx) {
+  if (state.gameChecking) return;
+  const card = state.gameCards[idx];
+  if (card.isFlipped || card.isMatched) return;
+
+  card.isFlipped = true;
+
+  if (state.gameFirst === null) {
+    state.gameFirst = idx;
+    renderGameBoard();
+    return;
+  }
+
+  state.gameSecond = idx;
+  state.gameMoves++;
+  renderGameBoard();
+
+  const first = state.gameCards[state.gameFirst];
+  const second = state.gameCards[state.gameSecond];
+
+  if (first.wordId === second.wordId && first.type !== second.type) {
+    state.gameChecking = true;
+    setTimeout(() => {
+      first.isMatched = true;
+      second.isMatched = true;
+      state.gameMatched++;
+      state.gameFirst = null;
+      state.gameSecond = null;
+      state.gameChecking = false;
+      renderGameBoard();
+      if (state.gameMatched === state.gameTotal) finishMemoryGame();
+    }, 500);
+  } else {
+    state.gameChecking = true;
+    setTimeout(() => {
+      first.isFlipped = false;
+      second.isFlipped = false;
+      state.gameFirst = null;
+      state.gameSecond = null;
+      state.gameChecking = false;
+      renderGameBoard();
+    }, 1000);
+  }
+}
+
+function startGameTimer() {
+  clearGameTimer();
+  state.gameTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - state.gameStartTime) / 1000);
+    const el = document.getElementById('game-timer');
+    if (el) el.textContent = formatGameTime(elapsed);
+  }, 1000);
+}
+
+function clearGameTimer() {
+  if (state.gameTimerInterval) {
+    clearInterval(state.gameTimerInterval);
+    state.gameTimerInterval = null;
+  }
+}
+
+function formatGameTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function finishMemoryGame() {
+  clearGameTimer();
+  const elapsed = Math.floor((Date.now() - state.gameStartTime) / 1000);
+
+  const bestKey = `game_best_${state.gameLevel}_${state.gameTotal}`;
+  const prev = getStorage(bestKey);
+  const isNew = !prev || elapsed < prev.time || (elapsed === prev.time && state.gameMoves < prev.moves);
+  if (isNew) setStorage(bestKey, { time: elapsed, moves: state.gameMoves });
+
+  document.getElementById('game-active').classList.remove('active');
+  document.getElementById('game-result').classList.add('active');
+  document.getElementById('game-result-time').textContent = formatGameTime(elapsed);
+  document.getElementById('game-result-moves').textContent = state.gameMoves;
+  document.getElementById('game-result-pairs').textContent = state.gameTotal;
+
+  const best = getStorage(bestKey);
+  document.getElementById('game-result-best').textContent =
+    `최고기록: ${formatGameTime(best.time)} · ${best.moves}번`;
+
+  setTimeout(() => showToast(isNew ? '🏆 새 최고기록이에요!' : '🎉 모든 짝을 찾았어요!'), 300);
+}
+
+function retryMemoryGame() {
+  startMemoryGame();
+}
+
+function backToGameSetup() {
+  clearGameTimer();
+  renderGameSetup();
 }
 
 // ===========================
