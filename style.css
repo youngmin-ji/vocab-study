@@ -417,6 +417,100 @@ body {
   transform: translateY(-1px);
 }
 
+/* Daily Goal */
+.goal-progress-card {
+  margin-top: 20px;
+  padding: 16px 20px;
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.goal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.goal-count {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.goal-count.achieved {
+  color: var(--accent);
+}
+
+.goal-bar-wrap {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.goal-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+
+.goal-bar-fill.achieved {
+  background: var(--accent);
+}
+
+.goal-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goal-status {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.goal-adjust {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goal-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition);
+}
+
+.goal-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.goal-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 20px;
+  text-align: center;
+}
+
 /* Progress Section */
 .progress-mini {
   margin-top: 24px;

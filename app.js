@@ -75,9 +75,17 @@ function markStudied(wordId) {
   const today = getTodayKey();
   if (!studied[today]) studied[today] = [];
   if (!studied[today].includes(wordId)) {
+    const prevCount = studied[today].length;
     studied[today].push(wordId);
     setStorage('vocab_studied', studied);
     updateStreak();
+    // Check if daily goal just achieved
+    const goal = getDailyGoal();
+    if (prevCount < goal && studied[today].length >= goal) {
+      setTimeout(() => showToast('🎉 오늘의 학습 목표를 달성했어요!'), 500);
+    }
+    // Update goal progress bar if on today page
+    if (state.currentPage === 'today') renderGoalProgress();
   }
 }
 
@@ -116,6 +124,56 @@ function updateStreak() {
   streak.lastDate = today;
   setStorage('vocab_streak', streak);
   return streak;
+}
+
+// ===========================
+// Daily Goal
+// ===========================
+function getDailyGoal() {
+  return getStorage('vocab_daily_goal') || 5;
+}
+
+function setDailyGoal(goal) {
+  setStorage('vocab_daily_goal', Math.max(1, Math.min(30, goal)));
+}
+
+function getTodayStudiedCount() {
+  const studied = getStudied();
+  const today = getTodayKey();
+  return (studied[today] || []).length;
+}
+
+function adjustGoal(delta) {
+  setDailyGoal(getDailyGoal() + delta);
+  renderGoalProgress();
+}
+
+function renderGoalProgress() {
+  const container = document.getElementById('goal-progress');
+  if (!container) return;
+  const goal = getDailyGoal();
+  const count = getTodayStudiedCount();
+  const pct = Math.min(100, Math.round((count / goal) * 100));
+  const achieved = count >= goal;
+  const remaining = Math.max(0, goal - count);
+
+  container.innerHTML = `
+    <div class="goal-header">
+      <span class="goal-title">🎯 오늘의 목표</span>
+      <span class="goal-count${achieved ? ' achieved' : ''}">${count} / ${goal}단어</span>
+    </div>
+    <div class="goal-bar-wrap">
+      <div class="goal-bar-fill${achieved ? ' achieved' : ''}" style="width:${pct}%"></div>
+    </div>
+    <div class="goal-controls">
+      <span class="goal-status">${achieved ? '🎉 목표 달성!' : `${remaining}단어 더 학습하면 달성!`}</span>
+      <div class="goal-adjust">
+        <button class="goal-btn" onclick="adjustGoal(-1)">−</button>
+        <span class="goal-value">${goal}</span>
+        <button class="goal-btn" onclick="adjustGoal(1)">+</button>
+      </div>
+    </div>
+  `;
 }
 
 // ===========================
@@ -225,6 +283,9 @@ function renderToday() {
   } else {
     document.getElementById('stat-quiz').textContent = '-';
   }
+
+  // Goal progress
+  renderGoalProgress();
 
   // Quick study - show 5 random words (excluding today's)
   const otherWords = WORDS.filter(w => w.id !== word.id);
@@ -723,6 +784,7 @@ function exportData() {
     vocab_studied: getStorage('vocab_studied'),
     vocab_quiz_history: getStorage('vocab_quiz_history'),
     vocab_streak: getStorage('vocab_streak'),
+    vocab_daily_goal: getStorage('vocab_daily_goal'),
     exportedAt: getTodayKey(),
   };
   const json = JSON.stringify(data, null, 2);
@@ -748,6 +810,7 @@ function importData(event) {
       if (data.vocab_studied) setStorage('vocab_studied', data.vocab_studied);
       if (data.vocab_quiz_history) setStorage('vocab_quiz_history', data.vocab_quiz_history);
       if (data.vocab_streak) setStorage('vocab_streak', data.vocab_streak);
+      if (data.vocab_daily_goal) setStorage('vocab_daily_goal', data.vocab_daily_goal);
       showToast('데이터를 가져왔어요 📥');
       renderProgress();
       renderToday();
